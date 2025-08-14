@@ -1,0 +1,12 @@
+{
+    "recommendations": [
+        "k--kato.intellij-idea-keybindings",
+        "eamodio.gitlens",
+        "ms-python.python",
+        "ms-python.isort",
+        "ms-python.debugpy",
+        "charliermarsh.ruff",
+        "tamasfe.even-better-toml",
+        "redhat.vscode-yaml"
+    ]
+}

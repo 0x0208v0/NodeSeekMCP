@@ -1,0 +1,44 @@
+services:
+  service:
+    user: root
+    container_name: 'nodeseekmcp'
+    hostname: 'nodeseekmcp'
+    build:
+      context: .
+      dockerfile: Dockerfile
+      network: host
+    working_dir: /opt/nodeseekmcp
+    restart: 'always'
+    volumes:
+      - '.:/opt/nodeseekmcp'
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '100M'
+        max-file: '10'
+    command:
+      - sh
+      - -c
+      - |
+        supervisord -c supervisor.conf -n
+    ports:
+      - '0.0.0.0:80:8866'
+      - '[::]:80:8866'
+#    sysctls:
+#      - net.ipv6.conf.all.disable_ipv6=0
+    networks:
+      - nodeseekmcp-network
+networks:
+  nodeseekmcp-network:
+    name: nodeseekmcp-network
+    enable_ipv6: true
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.0/16
+          gateway: 172.20.0.1
+        - subnet: fd00:db8:1234::/64
+          gateway: fd00:db8:1234::1

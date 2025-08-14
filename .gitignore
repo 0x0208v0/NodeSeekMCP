@@ -1,3 +1,5 @@
+# Based on: https://github.com/github/gitignore/blob/main/Python.gitignore
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -173,7 +175,8 @@ cython_debug/
 #  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
-#.idea/
+.idea/*
+!.idea/codeStyles/
 
 # Abstra
 # Abstra is an AI-powered process automation framework.
@@ -182,11 +185,13 @@ cython_debug/
 .abstra/
 
 # Visual Studio Code
-#  Visual Studio Code specific template is maintained in a separate VisualStudioCode.gitignore 
+#  Visual Studio Code specific template is maintained in a separate VisualStudioCode.gitignore
 #  that can be found at https://github.com/github/gitignore/blob/main/Global/VisualStudioCode.gitignore
-#  and can be added to the global gitignore or merged into this file. However, if you prefer, 
+#  and can be added to the global gitignore or merged into this file. However, if you prefer,
 #  you could uncomment the following to ignore the entire vscode folder
-# .vscode/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
 
 # Ruff stuff:
 .ruff_cache/
@@ -198,10 +203,23 @@ cython_debug/
 #  Cursor is an AI-powered code editor. `.cursorignore` specifies files/directories to
 #  exclude from AI features like autocomplete and code analysis. Recommended for sensitive data
 #  refer to https://docs.cursor.com/context/ignore-files
-.cursorignore
-.cursorindexingignore
+#.cursorignore
+#.cursorindexingignore
+.cursor/*
+!.cursor/rules/
 
 # Marimo
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Misc
+.DS_Store
+.adminer-init
+*.sqlite3
+*.sqlite3-journal@
+*.db
+*.pid
