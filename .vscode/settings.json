@@ -1,0 +1,19 @@
+{
+    "window.commandCenter": true,
+    "editor.fontSize": 11.1,
+    "workbench.editor.pinnedTabsOnSeparateRow": true,
+    "git.autofetch": true,
+    "git.openRepositoryInParentFolders": "never",
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff"
+    },
+    "[toml]": {
+        "editor.defaultFormatter": "tamasfe.even-better-toml"
+    },
+    "ruff.configurationPreference": "filesystemFirst",
+    "ruff.configuration": "${workspaceFolder}/.ruff.toml",
+    "black-formatter.args": [
+        "--config",
+        "${workspaceFolder}/pyproject.toml"
+    ]
+}

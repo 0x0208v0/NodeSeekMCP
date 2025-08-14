@@ -1,0 +1,5 @@
+*
+!nodeseekmcp
+!pyproject.toml
+!gunicorn.conf.py
+!supervisor.conf
