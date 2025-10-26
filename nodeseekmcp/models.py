@@ -10,6 +10,7 @@ from typing import Any
 from typing import AsyncGenerator
 from typing import Optional
 from typing import Self
+from typing import Sequence
 from typing import Union
 from zoneinfo import ZoneInfo
 
@@ -351,6 +352,7 @@ class RssPostHistory(BaseModel):
     async def get_list_by_page(
         cls,
         source: RssPostSource | None = None,
+        tags: Sequence[str] | None = None,
         start_time: datetime | None = None,
         end_time: datetime | None = None,
         page: int = 1,
@@ -360,6 +362,15 @@ class RssPostHistory(BaseModel):
         where = []
         if source:
             where.append(cls.source == source)
+        if tags:
+            tag_conditions = []
+            for tag in tags:
+                normalized_tag = tag.strip().lower()
+                if not normalized_tag:
+                    continue
+                tag_conditions.append(func.lower(cls.tag).like(f'%{normalized_tag}%'))
+            if tag_conditions:
+                where.append(sa.or_(*tag_conditions))
         if start_time:
             where.append(cls.published_at >= start_time)
         if end_time:
