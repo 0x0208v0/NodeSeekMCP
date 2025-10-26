@@ -85,6 +85,12 @@ async def get_rss_posts(
 
 
 if __name__ == '__main__':
-    asyncio.run(mcp.run_http_async(
-        transport='streamable-http', host='0.0.0.0', port=8866, stateless_http=True, log_level='debug',
-    ))
+    asyncio.run(
+        mcp.run_http_async(
+            transport='streamable-http',
+            host='0.0.0.0',
+            port=8866,
+            stateless_http=True,
+            log_level='debug',
+        )
+    )

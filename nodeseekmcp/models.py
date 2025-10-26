@@ -4,6 +4,7 @@ import asyncio
 import contextlib
 import uuid
 from datetime import datetime
+from sqlite3 import register_adapter
 from typing import Any
 from typing import AsyncGenerator
 from typing import Optional
@@ -13,9 +14,11 @@ from zoneinfo import ZoneInfo
 
 import pendulum
 import sqlalchemy as sa
+from pendulum import DateTime as Pendulum
 from sqlalchemy import Select
 from sqlalchemy import String
 from sqlalchemy import Text
+from sqlalchemy import event
 from sqlalchemy import func
 from sqlalchemy import select
 from sqlalchemy.dialects import postgresql
@@ -36,13 +39,37 @@ from sqlalchemy.types import CHAR
 from sqlalchemy.types import TypeDecorator
 from sqlalchemy.types import TypeEngine
 
-SQLALCHEMY_DATABASE_URI = 'sqlite+aiosqlite:///db.sqlite3'
+SQLALCHEMY_DATABASE_URI = 'sqlite+aiosqlite:///db.sqlite3?check_same_thread=false'
 
-engine = create_async_engine(SQLALCHEMY_DATABASE_URI, pool_pre_ping=True)
+register_adapter(Pendulum, lambda val: val.isoformat(" "))
 
-session_function = async_sessionmaker(engine, autoflush=False, expire_on_commit=False)
+engine = create_async_engine(
+    SQLALCHEMY_DATABASE_URI,
+    pool_pre_ping=True,
+)
 
-Session = async_scoped_session(session_function, scopefunc=asyncio.current_task)
+session_function = async_sessionmaker(
+    engine,
+    autoflush=False,
+    expire_on_commit=False,
+)
+
+Session = async_scoped_session(
+    session_function,
+    scopefunc=asyncio.current_task,
+)
+
+
+@event.listens_for(engine.sync_engine, 'connect')
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    cursor = dbapi_connection.cursor()
+    cursor.execute('PRAGMA foreign_keys=ON')
+    cursor.execute('PRAGMA journal_mode=WAL')
+    cursor.execute('PRAGMA legacy_alter_table=OFF')
+    cursor.execute('PRAGMA synchronous = NORMAL;')
+    cursor.execute('PRAGMA cache_size = 20000;')
+    cursor.execute('PRAGMA busy_timeout = 60000;')
+    cursor.close()
 
 
 @contextlib.asynccontextmanager
@@ -50,7 +77,7 @@ async def create_session() -> AsyncGenerator[AsyncSession, None]:
     session = Session()
     try:
         yield session
-        await session.rollback()
+        await session.commit()
     except:
         await session.rollback()
         raise
@@ -294,8 +321,9 @@ class BaseModel(DeclarativeBase):
 
 class RssPostHistory(BaseModel):
     __tablename__ = 'rss_post_history'
-    post_id: Mapped[str] = mapped_column(String(32), nullable=False, index=True, unique=True)
-    url: Mapped[str] = mapped_column(String(256), nullable=False, index=True, unique=True)
+    source: Mapped[str] = mapped_column(String(32), nullable=False, default='nodeseek', index=True)
+    post_id: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    url: Mapped[str] = mapped_column(String(256), nullable=False, index=True)
     author: Mapped[str] = mapped_column(String(128), nullable=False)
     title: Mapped[str] = mapped_column(Text, nullable=False)
     tag: Mapped[str] = mapped_column(String(32), nullable=False)
@@ -305,6 +333,11 @@ class RssPostHistory(BaseModel):
         nullable=False,
         default=lambda: pendulum.now('UTC'),
         index=True,
+    )
+
+    __table_args__ = (
+        sa.UniqueConstraint('source', 'post_id', name='uq_source_post_id'),
+        sa.UniqueConstraint('source', 'url', name='uq_source_url'),
     )
 
     @classmethod

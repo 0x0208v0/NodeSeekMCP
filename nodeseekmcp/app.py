@@ -35,4 +35,10 @@ async def index(request: Request):
 
 
 if __name__ == '__main__':
-    uvicorn.run("nodeseekmcp.app:app", host='0.0.0.0', port=8866, log_level='debug', workers=2)
+    uvicorn.run(
+        'nodeseekmcp.app:app',
+        host='0.0.0.0',
+        port=8866,
+        log_level='debug',
+        workers=2,
+    )
