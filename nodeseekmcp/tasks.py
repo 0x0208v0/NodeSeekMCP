@@ -10,6 +10,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from nodeseekmcp.deepflood import DeepFloodClient
 from nodeseekmcp.models import RssPostHistory
+from nodeseekmcp.models import RssPostSource
 from nodeseekmcp.models import create_session
 from nodeseekmcp.models import create_tables
 from nodeseekmcp.models import upsert
@@ -26,7 +27,7 @@ async def sync_nodeseek_rss_post_history():
     post_data_list = []
     for rss_post in rss_posts:
         post_data = dict(
-            source='nodeseek',
+            source=RssPostSource.NODESEEK,
             post_id=rss_post.post_id,
             url=rss_post.url,
             author=rss_post.author,
@@ -54,7 +55,7 @@ async def sync_deepflood_rss_post_history():
     post_data_list = []
     for rss_post in rss_posts:
         post_data = dict(
-            source='deepflood',
+            source=RssPostSource.DEEPFLOOD,
             post_id=rss_post.post_id,
             url=rss_post.url,
             author=rss_post.author,

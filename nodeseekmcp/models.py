@@ -4,6 +4,7 @@ import asyncio
 import contextlib
 import uuid
 from datetime import datetime
+from enum import StrEnum
 from sqlite3 import register_adapter
 from typing import Any
 from typing import AsyncGenerator
@@ -83,6 +84,7 @@ async def create_session() -> AsyncGenerator[AsyncSession, None]:
         raise
     finally:
         await session.close()
+        await Session.remove()
 
 
 async def create_tables():
@@ -319,9 +321,14 @@ class BaseModel(DeclarativeBase):
         return 0
 
 
+class RssPostSource(StrEnum):
+    NODESEEK = 'nodeseek'
+    DEEPFLOOD = 'deepflood'
+
+
 class RssPostHistory(BaseModel):
     __tablename__ = 'rss_post_history'
-    source: Mapped[str] = mapped_column(String(32), nullable=False, default='nodeseek', index=True)
+    source: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
     post_id: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
     url: Mapped[str] = mapped_column(String(256), nullable=False, index=True)
     author: Mapped[str] = mapped_column(String(128), nullable=False)
@@ -343,6 +350,7 @@ class RssPostHistory(BaseModel):
     @classmethod
     async def get_list_by_page(
         cls,
+        source: RssPostSource | None = None,
         start_time: datetime | None = None,
         end_time: datetime | None = None,
         page: int = 1,
@@ -350,6 +358,8 @@ class RssPostHistory(BaseModel):
         session: AsyncSession = None,
     ) -> tuple[list[Self], int]:
         where = []
+        if source:
+            where.append(cls.source == source)
         if start_time:
             where.append(cls.published_at >= start_time)
         if end_time:
