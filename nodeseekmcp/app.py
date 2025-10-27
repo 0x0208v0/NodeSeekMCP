@@ -16,11 +16,11 @@ from nodeseekmcp.models import engine
 
 templates = Jinja2Templates(directory=Path(__file__).parent / 'templates')
 
-http_mcp_app = mcp.http_app(path='/mcp', transport='http', stateless_http=True)
+http_mcp_app = mcp.http_app(path='/', transport='http', stateless_http=True)
 
-streamable_http_mcp_app = mcp.http_app(path='/mcp', transport='streamable-http', stateless_http=True)
+streamable_http_mcp_app = mcp.http_app(path='/', transport='streamable-http', stateless_http=True)
 
-sse_mcp_app = mcp.http_app(path='/mcp', transport='sse', stateless_http=True)
+sse_mcp_app = mcp.http_app(path='/', transport='sse', stateless_http=True)
 
 mcp_http_apps = (
     http_mcp_app,
