@@ -1,8 +1,8 @@
 # https://docs.gunicorn.org/en/latest/settings.html#settings
 
-chdir = '/opt/nodeseekmcp'
+# chdir = '/opt/nodeseekmcp'
 
-workers = 2
+workers = 1
 
 # https://www.uvicorn.org/deployment/#gunicorn
 # https://github.com/benoitc/gunicorn/issues/1539
@@ -24,6 +24,8 @@ accesslog = '-'
 access_log_format = '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s"'
 capture_output = True
 
-# gunicorn -c gunicorn.conf.py -b '0.0.0.0:8866' -b '[::]:8866'  nodeseekmcp.app:app
+# gunicorn -c gunicorn.conf.py -b '0.0.0.0:8866' -b '[::]:8866' nodeseekmcp.app:app
 
-# gunicorn -c gunicorn.conf.py -b '[::]:8866'  nodeseekmcp.app:app
+# gunicorn -c gunicorn.conf.py -b '0.0.0.0:8866' nodeseekmcp.app:app
+
+# gunicorn -c gunicorn.conf.py -b '[::]:8866' nodeseekmcp.app:app

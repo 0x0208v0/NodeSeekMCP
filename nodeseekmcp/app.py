@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import traceback
 from contextlib import AsyncExitStack
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -16,11 +17,11 @@ from nodeseekmcp.models import engine
 
 templates = Jinja2Templates(directory=Path(__file__).parent / 'templates')
 
-http_mcp_app = mcp.http_app(path='/', transport='http', stateless_http=True)
+http_mcp_app = mcp.http_app(path='/mcp', transport='http', stateless_http=True)
 
-streamable_http_mcp_app = mcp.http_app(path='/', transport='streamable-http', stateless_http=True)
+streamable_http_mcp_app = mcp.http_app(path='/mcp', transport='streamable-http', stateless_http=True)
 
-sse_mcp_app = mcp.http_app(path='/', transport='sse', stateless_http=True)
+sse_mcp_app = mcp.http_app(path='/mcp', transport='sse', stateless_http=True)
 
 mcp_http_apps = (
     http_mcp_app,
@@ -37,14 +38,17 @@ async def combined_lifespan(_: FastAPI):
     这里显式管理所有子应用的 lifespan context
     """
     async with AsyncExitStack() as stack:
-        for mounted_app in mcp_http_apps:
-            # 正确的方式：通过 router.lifespan_context 获取 lifespan
-            if hasattr(mounted_app, 'router') and hasattr(mounted_app.router, 'lifespan_context'):
-                ctx = mounted_app.router.lifespan_context(mounted_app)
-                await stack.enter_async_context(ctx)
-        yield
-        # 清理数据库引擎连接池
-        await engine.dispose()
+        try:
+            for mounted_app in mcp_http_apps:
+                # 正确的方式：通过 router.lifespan_context 获取 lifespan
+                if hasattr(mounted_app, 'router') and hasattr(mounted_app.router, 'lifespan_context'):
+                    ctx = mounted_app.router.lifespan_context(mounted_app)
+                    await stack.enter_async_context(ctx)
+            yield
+            # 清理数据库引擎连接池
+            await engine.dispose()
+        except:
+            traceback.print_exc()
 
 
 app = FastAPI(
