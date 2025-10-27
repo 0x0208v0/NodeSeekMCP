@@ -75,7 +75,7 @@ class GetForumTagsResponse(BaseResponse):
             '列出可用于过滤的论坛标签（也常被称为标签、板块、频道或分区），返回英文原始值与中文展示名称'
     ),
 )
-async def get_forum_tags() -> GetForumTagsResponse:
+async def get_forum_rss_tags() -> GetForumTagsResponse:
     try:
         tag_items = [
             ForumTagItem(
@@ -146,7 +146,7 @@ class GetRssPostHistoryResponse(BaseResponse):
             '标签可通过 get_forum_rss_tags 获取'
     ),
 )
-async def get_rss_posts(
+async def get_forum_rss_posts(
     source: Annotated[
         str,
         Field(
