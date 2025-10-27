@@ -26,43 +26,6 @@ class BaseResponse(BaseModel):
     error: str = Field(default='', description='错误信息，调用成功时为空')
 
 
-class RssPostItem(BaseModel):
-    source: RssPostSource = Field(description='帖子来源，nodeseek 或 deepflood')
-    post_id: str = Field(description='帖子ID', examples=['419416'])
-    url: str = Field(description='帖子URL', examples=['https://www.nodeseek.com/post-419416-1'])
-    author: str = Field(description='帖子作者', examples=['0x0208v0'])
-    title: str = Field(
-        description='帖子标题',
-        examples=['基于论坛nodeimage图床API，开源个Python版客户端，支持批量转存和备份，老人小孩很爱吃～'],
-    )
-    tag: str = Field(
-        description='帖子标签，按来源映射为中文，找不到映射时返回原始值',
-        examples=['技术'],
-    )
-    summary: str = Field(
-        description='帖子摘要',
-        examples=['如题，楼主作为灌水区UP主（不是， 基于论坛 nodeimage 图床 API，写了个 Python 版命令行工具...'],
-    )
-    published_at: str = Field(
-        description=f'帖子发布时间，ISO 8601 字符串，时区为 {DEFAULT_TIMEZONE}',
-        examples=['2025-08-10T16:49:46+08:00'],
-    )
-    published_at_relative: str = Field(
-        description='发布时间相对值，基于当前时间进行人性化展示',
-        examples=['1小时前'],
-    )
-
-
-class ForumTagItem(BaseModel):
-    source: RssPostSource = Field(description='标签所属的帖子来源')
-    value: str = Field(description='标签原始值（英文）', examples=['tech'])
-    label: str = Field(description='标签展示名称（中文）', examples=['技术'])
-
-
-class GetForumTagsResponse(BaseResponse):
-    tags: list[ForumTagItem] = Field(default_factory=list, description='可用标签列表')
-
-
 class GetCurrentTimeResponse(BaseResponse):
     timezone: str = Field(default='UTC', description='使用的时区名称')
     current_time: str = Field(default='', description='当前时间，ISO 8601 格式')
@@ -96,10 +59,20 @@ async def get_current_time(
     )
 
 
+class ForumTagItem(BaseModel):
+    source: RssPostSource = Field(description='标签所属的帖子来源')
+    value: str = Field(description='标签原始值（英文）', examples=['tech'])
+    label: str = Field(description='标签展示名称（中文）', examples=['技术'])
+
+
+class GetForumTagsResponse(BaseResponse):
+    tags: list[ForumTagItem] = Field(default_factory=list, description='可用标签列表')
+
+
 @mcp.tool(
     name='get_forum_rss_tags',
     description=(
-        '列出可用于过滤的论坛标签（也常被称为标签、板块、频道或分区），返回英文原始值与中文展示名称'
+            '列出可用于过滤的论坛标签（也常被称为标签、板块、频道或分区），返回英文原始值与中文展示名称'
     ),
 )
 async def get_forum_tags() -> GetForumTagsResponse:
@@ -115,6 +88,33 @@ async def get_forum_tags() -> GetForumTagsResponse:
         return GetForumTagsResponse(tags=tag_items)
     except Exception as e:
         return GetForumTagsResponse(success=False, error=str(e))
+
+
+class RssPostItem(BaseModel):
+    source: RssPostSource = Field(description='帖子来源，nodeseek 或 deepflood')
+    post_id: str = Field(description='帖子ID', examples=['419416'])
+    url: str = Field(description='帖子URL', examples=['https://www.nodeseek.com/post-419416-1'])
+    author: str = Field(description='帖子作者', examples=['0x0208v0'])
+    title: str = Field(
+        description='帖子标题',
+        examples=['基于论坛nodeimage图床API，开源个Python版客户端，支持批量转存和备份，老人小孩很爱吃～'],
+    )
+    tag: str = Field(
+        description='帖子标签，按来源映射为中文，找不到映射时返回原始值',
+        examples=['技术'],
+    )
+    summary: str = Field(
+        description='帖子摘要',
+        examples=['如题，楼主作为灌水区UP主（不是， 基于论坛 nodeimage 图床 API，写了个 Python 版命令行工具...'],
+    )
+    published_at: str = Field(
+        description=f'帖子发布时间，ISO 8601 字符串，时区为 {DEFAULT_TIMEZONE}',
+        examples=['2025-08-10T16:49:46+08:00'],
+    )
+    published_at_relative: str = Field(
+        description='发布时间相对值，基于当前时间进行人性化展示',
+        examples=['1小时前'],
+    )
 
 
 class GetRssPostHistoryResponse(BaseResponse):
@@ -141,9 +141,9 @@ class GetRssPostHistoryResponse(BaseResponse):
 @mcp.tool(
     name='get_forum_rss_posts',
     description=(
-        f'查询论坛 RSS 帖子，可按来源（nodeseek 或 deepflood）、标签（又称板块、频道或分区）、时间区间和分页过滤；'
-        f'若未指定时间区间，则默认返回最近1小时内的帖子；时间均以 {DEFAULT_TIMEZONE} 时区计算；'
-        '标签可通过 get_forum_rss_tags 获取'
+            f'查询论坛 RSS 帖子，可按来源（nodeseek 或 deepflood）、标签（又称板块、频道或分区）、时间区间和分页过滤；'
+            f'若未指定时间区间，则默认返回最近1小时内的帖子；时间均以 {DEFAULT_TIMEZONE} 时区计算；'
+            '标签可通过 get_forum_rss_tags 获取'
     ),
 )
 async def get_rss_posts(
@@ -161,8 +161,8 @@ async def get_rss_posts(
             default='',
             alias='tag',
             description=(
-                '按标签过滤，支持英文原始值（例如 tech）或中文名称（例如 技术）；'
-                '多个值使用逗号分隔；可调用 get_forum_rss_tags 获取完整列表'
+                    '按标签过滤，支持英文原始值（例如 tech）或中文名称（例如 技术）；'
+                    '多个值使用逗号分隔；可调用 get_forum_rss_tags 获取完整列表'
             ),
         ),
     ],

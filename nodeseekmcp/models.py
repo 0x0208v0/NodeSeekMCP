@@ -2,16 +2,22 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import inspect
 import uuid
 from datetime import datetime
 from enum import StrEnum
+from functools import wraps
+from inspect import signature
 from sqlite3 import register_adapter
 from typing import Any
 from typing import AsyncGenerator
+from typing import Awaitable
+from typing import Callable
 from typing import Optional
 from typing import Self
 from typing import Sequence
 from typing import Union
+from typing import overload
 from zoneinfo import ZoneInfo
 
 import pendulum
@@ -22,6 +28,7 @@ from sqlalchemy import String
 from sqlalchemy import Text
 from sqlalchemy import event
 from sqlalchemy import func
+from sqlalchemy import or_
 from sqlalchemy import select
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects import sqlite
@@ -41,12 +48,14 @@ from sqlalchemy.types import CHAR
 from sqlalchemy.types import TypeDecorator
 from sqlalchemy.types import TypeEngine
 
-SQLALCHEMY_DATABASE_URI = 'sqlite+aiosqlite:///db.sqlite3?check_same_thread=false'
+from nodeseekmcp.settings import settings
 
 register_adapter(Pendulum, lambda val: val.isoformat(" "))
 
 engine = create_async_engine(
-    SQLALCHEMY_DATABASE_URI,
+    url=settings.SQLALCHEMY_DATABASE_URI,
+    connect_args={'check_same_thread': False},
+    echo=settings.SQLALCHEMY_ECHO,
     pool_pre_ping=True,
 )
 
@@ -86,6 +95,75 @@ async def create_session() -> AsyncGenerator[AsyncSession, None]:
     finally:
         await session.close()
         await Session.remove()
+
+
+async def get_session() -> AsyncGenerator[AsyncSession, None]:
+    async with Session() as session:
+        yield session
+
+
+def find_session_idx[T, **P](func: Callable[P, T]) -> int:
+    func_params = signature(func).parameters
+    try:
+        session_args_idx = tuple(func_params).index('session')
+    except ValueError:
+        raise ValueError(f'Function {func.__qualname__} has no `session` argument') from None
+
+    return session_args_idx
+
+
+@overload
+def provide_session[T, **P](func: Callable[P, T]) -> Callable[P, T]: ...
+
+
+@overload
+def provide_session[T, **P](func: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]: ...
+
+
+@overload
+def provide_session[T, **P](func: Callable[P, AsyncGenerator[T, None]]) -> Callable[P, AsyncGenerator[T, None]]: ...
+
+
+def provide_session(func: Callable):
+    # https://stackoverflow.com/questions/75434681/type-hint-decorator-for-sync-async-functions
+
+    session_args_idx = find_session_idx(func)
+
+    if asyncio.iscoroutinefunction(func):
+
+        async def async_wrapper(*args, **kwargs):
+            if 'session' in kwargs or session_args_idx < len(args):
+                return await func(*args, **kwargs)
+            else:
+                async with create_session() as session:
+                    return await func(*args, session=session, **kwargs)
+
+        return wraps(func)(async_wrapper)
+
+    elif inspect.isasyncgenfunction(func):
+
+        @wraps(func)
+        async def async_gen_wrapper(*args, **kwargs):
+            if 'session' in kwargs or session_args_idx < len(args):
+                async for item in func(*args, **kwargs):
+                    yield item
+            else:
+                async with create_session() as session:
+                    async for item in func(*args, session=session, **kwargs):
+                        yield item
+
+        return async_gen_wrapper
+    else:
+
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            if 'session' in kwargs or session_args_idx < len(args):
+                return func(*args, **kwargs)
+            else:
+                with create_session() as session:
+                    return func(*args, session=session, **kwargs)
+
+        return wraps(func)(wrapper)
 
 
 async def create_tables():
@@ -349,6 +427,7 @@ class RssPostHistory(BaseModel):
     )
 
     @classmethod
+    @provide_session
     async def get_list_by_page(
         cls,
         source: RssPostSource | None = None,
@@ -368,23 +447,23 @@ class RssPostHistory(BaseModel):
                 normalized_tag = tag.strip().lower()
                 if not normalized_tag:
                     continue
-                tag_conditions.append(func.lower(cls.tag).like(f'%{normalized_tag}%'))
+                tag_conditions.append(func.lower(cls.tag).like(f'{normalized_tag}'))
             if tag_conditions:
-                where.append(sa.or_(*tag_conditions))
+                where.append(or_(*tag_conditions))
         if start_time:
             where.append(cls.published_at >= start_time)
         if end_time:
             where.append(cls.published_at < end_time)
-        async with session or Session() as session:
-            posts = await cls.get_list(
-                *where,
-                order_by=[cls.published_at.desc()],
-                offset=(page - 1) * page_size,
-                limit=page_size,
-                session=session,
-            )
-            total_count = await cls.count(
-                *where,
-                session=session,
-            )
-            return posts, total_count
+
+        posts = await cls.get_list(
+            *where,
+            order_by=[cls.published_at.desc()],
+            offset=(page - 1) * page_size,
+            limit=page_size,
+            session=session,
+        )
+        total_count = await cls.count(
+            *where,
+            session=session,
+        )
+        return posts, total_count
