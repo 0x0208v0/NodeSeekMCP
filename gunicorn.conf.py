@@ -16,6 +16,8 @@ max_requests_jitter = 20
 
 timeout = 10
 
+graceful_timeout = 1
+
 loglevel = 'info'
 errorlog = '-'
 accesslog = '-'

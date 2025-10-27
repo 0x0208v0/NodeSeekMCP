@@ -6,4 +6,6 @@ from uvicorn_worker import UvicornWorker
 
 
 class MyUvicornWorker(UvicornWorker):
-    pass
+    CONFIG_KWARGS = {
+        'timeout_graceful_shutdown': 0,
+    }
