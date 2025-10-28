@@ -9,6 +9,8 @@ RUN  python -m pip install --upgrade build  && python -m build
 
 FROM python:3.13-alpine
 
+ENV TZ=Asia/Shanghai
+
 WORKDIR /opt/nodeseekmcp
 COPY --from=builder /opt/dist /opt/nodeseekmcp/dist
 RUN python -m pip install --no-cache-dir /opt/nodeseekmcp/dist/*.whl && rm -rf /opt/nodeseekmcp/dist

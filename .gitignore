@@ -221,5 +221,8 @@ __marimo__/
 .adminer-init
 *.sqlite3
 *.sqlite3-journal@
+*.sqlite3-shm
+*.sqlite3-wal
 *.db
 *.pid
+nodeseekmcp_data/
